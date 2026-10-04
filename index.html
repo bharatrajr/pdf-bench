@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PDF Bench — split, merge, combine and rename PDFs</title>
+<meta name="description" content="Split, merge, combine and bulk-rename PDFs right in your browser. Works offline. Files never leave your device.">
+<meta name="theme-color" content="#2f4bff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1424" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="icon" href="icons/icon-192.png" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="PDF Bench">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <svg width="42" height="42" viewBox="0 0 46 46" aria-hidden="true">
+      <rect x="4" y="3" width="26" height="34" rx="3" fill="#2f4bff"/>
+      <path d="M4 20 H30" stroke="#ffc93c" stroke-width="3" stroke-dasharray="4 3"/>
+      <rect x="16" y="9" width="26" height="34" rx="3" fill="none" stroke="currentColor" stroke-width="2.5"/>
+    </svg>
+    <div>
+      <h1>PDF Bench</h1>
+      <p>Split, merge, combine and rename PDFs</p>
+    </div>
+  </div>
+  <div class="top-actions">
+    <span class="privacy" title="Nothing is uploaded. All work happens on this device.">🔒 Files stay on your device</span>
+    <button class="btn" id="installBtn" hidden>⬇ Install app</button>
+    <button class="btn" id="helpBtn" aria-haspopup="dialog">? How it works</button>
+  </div>
+</header>
+
+<ol class="steps" aria-label="How to use">
+  <li id="step1" class="on"><span>1</span>Add PDFs</li>
+  <li id="step2"><span>2</span>Tick the files to use</li>
+  <li id="step3"><span>3</span>Pick a tool and run it</li>
+  <li id="step4"><span>4</span>Download</li>
+</ol>
+
+<main class="layout">
+
+  <!-- POOL -->
+  <section class="panel pool" aria-label="Your files">
+    <div class="pool-head">
+      <div class="pool-title"><h2>Your files</h2><span class="stats" id="stats">No files yet</span></div>
+      <div class="tools">
+        <button class="btn primary sm-primary" id="addBtn">+ Add PDFs</button>
+        <button class="btn" id="addDirBtn">Add folder</button>
+      </div>
+      <div class="selbar" id="selbar" hidden>
+        <span class="lbl-inline">Tick:</span>
+        <button class="btn sm" id="selAll">All</button>
+        <button class="btn sm" id="selNone">None</button>
+        <button class="btn sm" id="selInv">Invert</button>
+        <select id="sortBy" class="sm-select" aria-label="Sort files">
+          <option value="">Sort…</option>
+          <option value="name">Name A→Z</option>
+          <option value="name-desc">Name Z→A</option>
+          <option value="pages">Fewest pages first</option>
+          <option value="pages-desc">Most pages first</option>
+          <option value="size">Smallest first</option>
+          <option value="size-desc">Largest first</option>
+          <option value="reverse">Reverse order</option>
+        </select>
+      </div>
+      <input id="filter" class="filter" type="search" placeholder="Filter by name…" aria-label="Filter files by name" hidden>
+      <input type="file" id="fileInput" accept="application/pdf,.pdf" multiple hidden>
+      <input type="file" id="dirInput" webkitdirectory multiple hidden>
+    </div>
+
+    <div class="list" id="poolList"></div>
+
+    <div class="pool-foot" id="poolFoot" hidden>
+      <div class="foot-main">
+        <button class="btn primary" id="zipSel">⬇ Download ticked as ZIP</button>
+        <button class="btn" id="dlEach" title="One download per file">Download each</button>
+      </div>
+      <details class="more">
+        <summary>More download options</summary>
+        <div class="ziprow">
+          <label for="zipName">ZIP name</label>
+          <input id="zipName" value="pdf-bench-output">
+          <span>.zip</span>
+        </div>
+        <div class="dlgrid">
+          <button class="btn" id="zipAll">ZIP every file</button>
+          <button class="btn" id="saveFolder" title="Chrome and Edge only">Save into a folder…</button>
+          <button class="btn danger" id="rmSel">Remove ticked</button>
+          <button class="btn danger" id="clearAll">Clear list</button>
+        </div>
+        <p class="foot-note">Downloads go to your Downloads folder. “Save into a folder…” lets you choose where (Chrome/Edge).</p>
+      </details>
+    </div>
+  </section>
+
+  <!-- BENCH -->
+  <section class="bench" aria-label="Tools">
+    <div class="results" id="results" hidden role="status"></div>
+
+    <div class="tabs" role="tablist" aria-label="Tool">
+      <button class="tab" role="tab" id="tab-split" data-tab="split" aria-controls="pane-split" aria-selected="true">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v4M18 15v6H6V3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 13h18" stroke="currentColor" stroke-width="2" stroke-dasharray="3 2"/></svg>
+        <span><b>Split</b><small>Cut into pieces</small></span>
+      </button>
+      <button class="tab" role="tab" id="tab-merge" data-tab="merge" aria-controls="pane-merge" aria-selected="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="8" height="11" rx="1" fill="none" stroke="currentColor" stroke-width="2"/><rect x="13" y="3" width="8" height="11" rx="1" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 17v2h10v-2M12 19v3" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+        <span><b>Merge</b><small>Join into one</small></span>
+      </button>
+      <button class="tab" role="tab" id="tab-combo" data-tab="combo" aria-controls="pane-combo" aria-selected="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="6" r="3" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="18" cy="6" r="3" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="18" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 8l3 7M16 8l-3 7M9 6h6" stroke="currentColor" stroke-width="2"/></svg>
+        <span><b>Combine</b><small>Every grouping</small></span>
+      </button>
+      <button class="tab" role="tab" id="tab-rename" data-tab="rename" aria-controls="pane-rename" aria-selected="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M13 7l4 4" stroke="currentColor" stroke-width="2"/></svg>
+        <span><b>Rename</b><small>Many at once</small></span>
+      </button>
+    </div>
+
+    <!-- SPLIT -->
+    <div class="pane" id="pane-split" role="tabpanel" aria-labelledby="tab-split">
+      <h2>Split PDFs</h2>
+      <p class="lede">Cut each ticked file into smaller PDFs. The new files appear right under their source.</p>
+
+      <div class="label">How do you want to split?</div>
+      <div class="cards" id="splitCards" role="radiogroup" aria-label="Split method">
+        <label class="card"><input type="radio" name="splitMode" value="each" checked><b>Every page</b><small>One file per page</small></label>
+        <label class="card"><input type="radio" name="splitMode" value="chunk"><b>Every N pages</b><small>Fixed-size chunks</small></label>
+        <label class="card"><input type="radio" name="splitMode" value="parts"><b>N equal parts</b><small>Divide evenly</small></label>
+        <label class="card"><input type="radio" name="splitMode" value="ranges"><b>Custom ranges</b><small>e.g. 1-3, 4-6, 7-</small></label>
+        <label class="card"><input type="radio" name="splitMode" value="oddeven"><b>Odd / even</b><small>Two files</small></label>
+        <label class="card"><input type="radio" name="splitMode" value="remove"><b>Delete pages</b><small>Keep the rest</small></label>
+      </div>
+
+      <div class="field" id="fN" hidden>
+        <label for="splitN" id="lblN">Pages per file</label>
+        <div class="stepper"><button type="button" class="btn" data-step="-1" aria-label="Less">−</button><input type="number" id="splitN" min="1" value="5" inputmode="numeric"><button type="button" class="btn" data-step="1" aria-label="More">+</button></div>
+      </div>
+      <div class="field" id="fRanges" hidden>
+        <label for="splitRanges" id="lblRanges">Page ranges</label>
+        <input id="splitRanges" placeholder="1-3, 4-6, 7-" spellcheck="false" autocomplete="off">
+        <small>A comma starts a new file: <code>1-3, 7, 9-</code> makes three files. <code>+</code> joins pages into one file: <code>1-2+9</code>. <code>last</code> = final page. <code>5-3</code> reverses.</small>
+      </div>
+
+      <details class="more">
+        <summary>Naming &amp; options</summary>
+        <div class="field">
+          <label for="splitTpl">Name for each new file</label>
+          <input id="splitTpl" value="{name}_p{n}" spellcheck="false">
+          <small>Fill-ins: <code>{name}</code> <code>{n}</code> <code>{total}</code> <code>{range}</code> <code>{start}</code> <code>{end}</code> <code>{pages}</code> <code>{date}</code></small>
+        </div>
+        <label class="check"><input type="checkbox" id="splitPad" checked><span>Zero-pad numbers (01, 02, 03…)</span></label>
+        <label class="check"><input type="checkbox" id="splitSelect" checked><span>Tick the new files and untick their sources afterwards</span></label>
+        <label class="check"><input type="checkbox" id="splitRemove"><span>Remove the original file from the list after splitting</span></label>
+      </details>
+
+      <div class="preview" id="splitPreview"></div>
+      <div class="btnrow"><button class="btn primary big" id="runSplit">Split</button></div>
+    </div>
+
+    <!-- MERGE -->
+    <div class="pane" id="pane-merge" role="tabpanel" aria-labelledby="tab-merge" hidden>
+      <h2>Merge PDFs</h2>
+      <p class="lede">Join the ticked files in list order. Drag the <span class="grip-i">⋮⋮</span> handle in the list, or use the arrows below, to change the order.</p>
+
+      <div class="label">Order</div>
+      <ol class="order" id="mergeOrder"></ol>
+
+      <div class="label">How do you want to merge?</div>
+      <div class="cards" role="radiogroup" aria-label="Merge method">
+        <label class="card"><input type="radio" name="mergeMode" value="concat" checked><b>One file</b><small>In list order</small></label>
+        <label class="card"><input type="radio" name="mergeMode" value="reverse"><b>One file, reversed</b><small>Last file first</small></label>
+        <label class="card"><input type="radio" name="mergeMode" value="interleave"><b>Interleave</b><small>A1, B1, A2, B2…</small></label>
+        <label class="card"><input type="radio" name="mergeMode" value="group"><b>Groups of N</b><small>1+2, 3+4, …</small></label>
+      </div>
+
+      <div class="field" id="fGroup" hidden>
+        <label for="mergeN">Files per merged PDF</label>
+        <div class="stepper"><button type="button" class="btn" data-step="-1" aria-label="Less">−</button><input type="number" id="mergeN" min="2" value="2" inputmode="numeric"><button type="button" class="btn" data-step="1" aria-label="More">+</button></div>
+        <small>A leftover file is kept on its own.</small>
+      </div>
+      <label class="check" id="fDuplex" hidden><input type="checkbox" id="mergeDuplex"><span>Reverse every second file first (fixes duplex scans where the back sides come out backwards)</span></label>
+
+      <div class="field">
+        <label for="mergeName" id="lblMergeName">Name of the merged file</label>
+        <input id="mergeName" value="merged" spellcheck="false">
+        <small id="hintMergeName"></small>
+      </div>
+
+      <details class="more">
+        <summary>Options</summary>
+        <label class="check"><input type="checkbox" id="mergeSelect" checked><span>Tick the merged result and untick its sources afterwards</span></label>
+        <label class="check"><input type="checkbox" id="mergeRemove"><span>Remove the source files from the list after merging</span></label>
+      </details>
+
+      <div class="preview" id="mergePreview"></div>
+      <div class="btnrow"><button class="btn primary big" id="runMerge">Merge</button></div>
+    </div>
+
+    <!-- COMBO -->
+    <div class="pane" id="pane-combo" role="tabpanel" aria-labelledby="tab-combo" hidden>
+      <h2>Combine every grouping</h2>
+      <p class="lede">Makes a merged PDF for every possible group of the ticked files. For example, every pair of chapters, or every ordering of three sections.</p>
+
+      <div class="two">
+        <div class="field"><label for="comboMin">At least … files each</label>
+          <div class="stepper"><button type="button" class="btn" data-step="-1" aria-label="Less">−</button><input type="number" id="comboMin" min="1" value="2" inputmode="numeric"><button type="button" class="btn" data-step="1" aria-label="More">+</button></div></div>
+        <div class="field"><label for="comboMax">At most … files each</label>
+          <div class="stepper"><button type="button" class="btn" data-step="-1" aria-label="Less">−</button><input type="number" id="comboMax" min="1" value="2" inputmode="numeric"><button type="button" class="btn" data-step="1" aria-label="More">+</button></div></div>
+      </div>
+      <label class="check"><input type="checkbox" id="comboOrdered"><span>Order matters (A+B and B+A become different files)</span></label>
+
+      <details class="more">
+        <summary>Naming &amp; options</summary>
+        <div class="field">
+          <label for="comboNaming">Name the files by</label>
+          <select id="comboNaming">
+            <option value="names">The names joined (Intro + Chapter 1)</option>
+            <option value="ids">Numbers from the key below (combo_1-3-4)</option>
+            <option value="seq">Running number (combo_001)</option>
+          </select>
+        </div>
+        <label class="check"><input type="checkbox" id="comboSelect" checked><span>Tick the new files and untick their sources afterwards</span></label>
+      </details>
+
+      <div class="label">Files used</div>
+      <div class="chips" id="comboKey"></div>
+      <div class="preview" id="comboPreview"></div>
+      <div class="btnrow"><button class="btn primary big" id="runCombo">Generate</button></div>
+    </div>
+
+    <!-- RENAME -->
+    <div class="pane" id="pane-rename" role="tabpanel" aria-labelledby="tab-rename" hidden>
+      <h2>Rename many files</h2>
+      <p class="lede">Set the rules and watch the preview. Tip: you can also click any name in the list to rename one file by hand.</p>
+
+      <div class="seg" role="radiogroup" aria-label="Which files">
+        <label><input type="radio" name="rnScope" value="sel" checked><span>Ticked files</span></label>
+        <label><input type="radio" name="rnScope" value="all"><span>All files</span></label>
+      </div>
+
+      <div class="field">
+        <label for="rnTpl">New name</label>
+        <input id="rnTpl" value="{name}" spellcheck="false">
+        <small>Insert:
+          <button type="button" class="ins" data-ins="{name}">{name}</button>
+          <button type="button" class="ins" data-ins="{i}">{i} counter</button>
+          <button type="button" class="ins" data-ins="{pages}">{pages}</button>
+          <button type="button" class="ins" data-ins="{date}">{date}</button>
+          <button type="button" class="ins" data-ins="{origin}">{origin}</button>
+        </small>
+      </div>
+      <div class="two">
+        <div class="field"><label for="rnFind">Find</label><input id="rnFind" spellcheck="false"></div>
+        <div class="field"><label for="rnRepl">Replace with</label><input id="rnRepl" spellcheck="false"></div>
+      </div>
+
+      <details class="more">
+        <summary>Clean up (spaces, case, trimming)</summary>
+        <div class="two">
+          <div class="field"><label for="rnSpaces">Spaces</label>
+            <select id="rnSpaces"><option value="">Leave as they are</option><option value="_">Change to _</option><option value="-">Change to -</option><option value="none">Remove</option></select></div>
+          <div class="field"><label for="rnKase">Letter case</label>
+            <select id="rnKase"><option value="">Leave as it is</option><option value="lower">all lowercase</option><option value="upper">ALL UPPERCASE</option><option value="title">Title Case</option><option value="sentence">Sentence case</option></select></div>
+        </div>
+        <div class="two">
+          <div class="field"><label for="rnTrimS">Delete first N characters</label><input type="number" id="rnTrimS" min="0" value="0"></div>
+          <div class="field"><label for="rnTrimE">Delete last N characters</label><input type="number" id="rnTrimE" min="0" value="0"></div>
+        </div>
+        <label class="check"><input type="checkbox" id="rnSpecial"><span>Remove special characters (keeps letters, numbers, spaces, <code>. _ - + ( )</code>)</span></label>
+      </details>
+      <details class="more">
+        <summary>Counter, prefix &amp; advanced</summary>
+        <div class="three">
+          <div class="field"><label for="rnStart">Counter starts at</label><input type="number" id="rnStart" value="1"></div>
+          <div class="field"><label for="rnStep">Step</label><input type="number" id="rnStep" value="1"></div>
+          <div class="field"><label for="rnPad">Digits</label><input type="number" id="rnPad" min="1" value="2"></div>
+        </div>
+        <div class="two">
+          <div class="field"><label for="rnPrefix">Add to the start</label><input id="rnPrefix" spellcheck="false"></div>
+          <div class="field"><label for="rnSuffix">Add to the end</label><input id="rnSuffix" spellcheck="false"></div>
+        </div>
+        <label class="check"><input type="checkbox" id="rnRegex"><span>“Find” is a regular expression</span></label>
+        <label class="check"><input type="checkbox" id="rnCase"><span>Match upper/lower case exactly</span></label>
+      </details>
+
+      <div class="label" style="margin-top:14px">Preview</div>
+      <div id="rnPreview"></div>
+      <div class="btnrow"><button class="btn primary big" id="runRename">Apply new names</button><button class="btn" id="undoRename" disabled>Undo</button></div>
+    </div>
+  </section>
+</main>
+
+<dialog id="help" aria-labelledby="helpTitle">
+  <form method="dialog" class="help">
+    <h2 id="helpTitle">How PDF Bench works</h2>
+    <ol>
+      <li><b>Add PDFs.</b> Drop them anywhere on the page, or use <em>+ Add PDFs</em>. Installed as an app, you can also open PDFs with it from your file manager.</li>
+      <li><b>Tick the files</b> you want to work on. Shift-click a tickbox to tick a whole range. Drag <span class="grip-i">⋮⋮</span> to reorder.</li>
+      <li><b>Pick a tool</b> (Split, Merge, Combine, Rename). The preview tells you exactly what will happen before you press the button.</li>
+      <li><b>Download.</b> Results are added to the list and ticked, so “Download ticked as ZIP” grabs just what you made. You can also chain tools — split, then merge or rename the pieces.</li>
+    </ol>
+    <p class="muted">Everything runs on your device. Nothing is uploaded, and after the first visit the app works offline.</p>
+    <div class="btnrow"><button class="btn primary" value="close">Got it</button></div>
+  </form>
+</dialog>
+
+<div id="busy" hidden><div class="box"><div class="msg" id="busyMsg">Working…</div><div class="bar" id="busyBarWrap"><i id="busyBar"></i></div></div></div>
+<div id="dropveil" hidden><div>Drop PDFs to add them</div></div>
+<div id="toasts" aria-live="polite"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
