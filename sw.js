@@ -1,5 +1,5 @@
 // Bump VERSION whenever any app file changes so clients pick up the update.
-const VERSION = 'v1.0.0';
+const VERSION = 'v1.0.1';
 const CACHE = `pdf-bench-${VERSION}`;
 const RUNTIME = 'pdf-bench-runtime';
 

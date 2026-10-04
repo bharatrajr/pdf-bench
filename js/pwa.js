@@ -36,9 +36,11 @@ export function initPwa({ onFiles }) {
     });
   }).catch(() => { /* offline support unavailable */ });
 
+  // Reload only when an update replaces an existing worker, never on the first install.
+  const hadController = !!navigator.serviceWorker.controller;
   let reloading = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (reloading) return; reloading = true;
+    if (!hadController || reloading) return; reloading = true;
     location.reload();
   });
 }
