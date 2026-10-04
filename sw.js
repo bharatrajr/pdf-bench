@@ -1,5 +1,5 @@
 // Bump VERSION whenever any app file changes so clients pick up the update.
-const VERSION = 'v1.0.1';
+const VERSION = 'v1.0.2';
 const CACHE = `pdf-bench-${VERSION}`;
 const RUNTIME = 'pdf-bench-runtime';
 
@@ -21,7 +21,11 @@ const LIBS = [
 ];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll([...APP_SHELL, ...LIBS])));
+  // cache: 'reload' bypasses the HTTP cache so a new version never stores stale files.
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll([
+    ...APP_SHELL.map(u => new Request(u, { cache: 'reload' })),
+    ...LIBS
+  ])));
 });
 
 self.addEventListener('activate', e => {
